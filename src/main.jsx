@@ -1,6 +1,8 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
+import { Analytics as VercelAnalytics } from "@vercel/analytics/react";
+import { SpeedInsights } from "@vercel/speed-insights/react";
 import "./index.css";
 import Home from "@/pages/Home";
 import LogMeal from "@/pages/LogMeal";
@@ -63,6 +65,8 @@ createRoot(document.getElementById("root")).render(
       <AuthProvider>
         <BreadCrumbProvider>
           <RouterProvider router={router} />
+          <VercelAnalytics />
+          <SpeedInsights />
         </BreadCrumbProvider>
       </AuthProvider>
     </ThemeProvider>
