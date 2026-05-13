@@ -1,18 +1,25 @@
-# React + Vite
+# Track Cals Client
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React/Vite frontend for Track Cals.
 
-Currently, two official plugins are available:
+## Local Setup
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+1. Copy `.env.example` to `.env`.
+2. Set `VITE_API_BASE_URL` to the Spring Boot API URL.
+3. Run `npm install`.
+4. Run `npm run dev`.
 
-## React Compiler
+## Scripts
 
-The React Compiler is enabled on this template. See [this documentation](https://react.dev/learn/react-compiler) for more information.
+- `npm run dev` starts the local Vite server.
+- `npm run lint` checks the frontend.
+- `npm run build` creates a production build.
 
-Note: This will impact Vite dev & build performances.
+## App Structure
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+- `src/hooks/AuthContext.jsx` stores the authenticated session and exposes auth actions.
+- `src/lib/api.js` centralizes API calls and error handling.
+- `src/pages/Home.jsx` renders the daily overview.
+- `src/pages/Profile.jsx` manages user details and calorie targets.
+- `src/pages/LogMeal.jsx` manages meal logging.
+- `src/pages/Analytics.jsx` manages weight and exercise burn check-ins.
