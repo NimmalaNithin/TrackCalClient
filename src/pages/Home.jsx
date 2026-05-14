@@ -187,7 +187,7 @@ export default function Home() {
                 Set up your profile first
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Add your body details, goal, target weight, and deficit strategy
+                Add your body details, target weight, and calorie strategy
                 so Track Cals can calculate maintenance calories and daily
                 target calories.
               </p>

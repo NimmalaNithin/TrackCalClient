@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Spinner } from "@/components/ui/spinner";
-import { Field, Select, numberOrNull } from "@/components/forms/FormControls";
+import { Field, Select } from "@/components/forms/FormControls";
 import { apiRequest } from "@/lib/api";
 import { formatNumber } from "@/lib/format";
 import { useAuth } from "@/hooks/AuthContext";
@@ -18,16 +18,51 @@ const profileDefaults = {
   weightKg: "",
   targetWeightKg: "",
   activityLevel: "moderate",
-  goal: "maintain",
   targetStrategy: "timeline",
   targetDate: "",
-  dailyDeficit: "400",
+  dailyCalorieAdjustment: "400",
 };
 
 function tomorrowIso() {
   const date = new Date();
   date.setDate(date.getDate() + 1);
   return date.toISOString().slice(0, 10);
+}
+
+function inferGoal(weightKg, targetWeightKg) {
+  const current = Number(weightKg);
+  const target = Number(targetWeightKg);
+
+  if (!Number.isFinite(current) || !Number.isFinite(target)) {
+    return "maintain";
+  }
+  if (target > current) {
+    return "gain";
+  }
+  if (target < current) {
+    return "lose";
+  }
+  return "maintain";
+}
+
+function goalLabel(goal) {
+  if (goal === "gain") {
+    return "Weight gain";
+  }
+  if (goal === "lose") {
+    return "Weight loss";
+  }
+  return "Maintenance";
+}
+
+function adjustmentLabel(goal) {
+  if (goal === "gain") {
+    return "Daily surplus";
+  }
+  if (goal === "lose") {
+    return "Daily deficit";
+  }
+  return "Daily adjustment";
 }
 
 export default function Profile() {
@@ -63,10 +98,9 @@ export default function Profile() {
           weightKg: String(response.weightKg || ""),
           targetWeightKg: String(response.targetWeightKg || ""),
           activityLevel: response.activityLevel || "moderate",
-          goal: response.goal || "maintain",
           targetStrategy: response.targetStrategy || "timeline",
           targetDate: response.targetDate || "",
-          dailyDeficit: String(response.dailyDeficit ?? 400),
+          dailyCalorieAdjustment: String(response.dailyCalorieAdjustment ?? 400),
         });
       }
     } catch (err) {
@@ -106,9 +140,9 @@ export default function Profile() {
           age: Number(form.age),
           heightCm: Number(form.heightCm),
           weightKg: Number(form.weightKg),
-          targetWeightKg: numberOrNull(form.targetWeightKg),
+          targetWeightKg: Number(form.targetWeightKg),
           targetDate: form.targetStrategy === "timeline" ? form.targetDate || tomorrowIso() : null,
-          dailyDeficit: form.targetStrategy === "manual" ? Number(form.dailyDeficit) : null,
+          dailyCalorieAdjustment: form.targetStrategy === "manual" ? Number(form.dailyCalorieAdjustment) : null,
         },
       });
       setProfile(response);
@@ -141,6 +175,9 @@ export default function Profile() {
   }
 
   const canDeleteProfile = deleteAcknowledged && deletePhrase.trim() === "DELETE ACCOUNT" && !isDeleting;
+  const inferredGoal = inferGoal(form.weightKg, form.targetWeightKg);
+  const profileGoal = profile?.goal || inferredGoal;
+  const isMaintaining = inferredGoal === "maintain";
 
   return (
     <div className="mx-auto grid w-full max-w-6xl gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
@@ -180,7 +217,7 @@ export default function Profile() {
             <Input min="25" max="350" step="0.01" required type="number" value={form.weightKg} onChange={(event) => updateField("weightKg", event.target.value)} />
           </Field>
           <Field label="Target weight (kg)">
-            <Input min="25" max="350" step="0.01" type="number" value={form.targetWeightKg} onChange={(event) => updateField("targetWeightKg", event.target.value)} />
+            <Input min="25" max="350" step="0.01" required type="number" value={form.targetWeightKg} onChange={(event) => updateField("targetWeightKg", event.target.value)} />
           </Field>
           <Field label="Activity level">
             <Select value={form.activityLevel} onChange={(event) => updateField("activityLevel", event.target.value)}>
@@ -191,17 +228,16 @@ export default function Profile() {
               <option value="athlete">Athlete</option>
             </Select>
           </Field>
-          <Field label="Goal">
-            <Select value={form.goal} onChange={(event) => updateField("goal", event.target.value)}>
-              <option value="lose">Lose weight</option>
-              <option value="maintain">Maintain weight</option>
-              <option value="gain">Gain weight</option>
-            </Select>
-          </Field>
+          <div className="rounded-lg border bg-muted/40 p-3 text-sm">
+            <p className="font-medium">{goalLabel(inferredGoal)}</p>
+            <p className="mt-1 text-muted-foreground">
+              Based on your current and target weight.
+            </p>
+          </div>
           <Field label="Target method">
             <Select value={form.targetStrategy} onChange={(event) => updateField("targetStrategy", event.target.value)}>
-              <option value="timeline">Reach target by date range</option>
-              <option value="manual">Set daily deficit manually</option>
+              <option value="timeline">By date</option>
+              <option value="manual">By Calories</option>
             </Select>
           </Field>
 
@@ -216,8 +252,16 @@ export default function Profile() {
               />
             </Field>
           ) : (
-            <Field label="Daily deficit">
-              <Input min="-1000" max="1000" required type="number" value={form.dailyDeficit} onChange={(event) => updateField("dailyDeficit", event.target.value)} />
+            <Field label={adjustmentLabel(inferredGoal)}>
+              <Input
+                min="0"
+                max="1000"
+                required
+                type="number"
+                value={isMaintaining ? "0" : form.dailyCalorieAdjustment}
+                disabled={isMaintaining}
+                onChange={(event) => updateField("dailyCalorieAdjustment", event.target.value)}
+              />
             </Field>
           )}
 
@@ -267,8 +311,8 @@ export default function Profile() {
                   <p className="text-xl font-semibold">{formatNumber(profile?.calorieTarget, "--")}</p>
                 </div>
                 <div className="rounded-lg bg-muted p-3">
-                  <p className="text-sm text-muted-foreground">Daily deficit</p>
-                  <p className="text-xl font-semibold">{formatNumber(profile?.dailyDeficit, "--")}</p>
+                  <p className="text-sm text-muted-foreground">{adjustmentLabel(profileGoal)}</p>
+                  <p className="text-xl font-semibold">{formatNumber(profile?.dailyCalorieAdjustment, "--")}</p>
                 </div>
                 <div className="rounded-lg bg-muted p-3">
                   <p className="text-sm text-muted-foreground">Protein</p>
