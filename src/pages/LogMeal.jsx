@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
 import { Flame, Save, Trash2 } from "lucide-react";
-import { useSearchParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -30,10 +29,7 @@ function normalizeSelectableDate(date) {
 export default function LogMeal() {
   const { token } = useAuth();
   const { setBreadCrumbTitle } = useBreadCrumb();
-  const [searchParams, setSearchParams] = useSearchParams();
-  const [selectedDate, setSelectedDate] = useState(() =>
-    normalizeSelectableDate(searchParams.get("date")),
-  );
+  const [selectedDate, setSelectedDate] = useState(todayIso);
   const [mealForm, setMealForm] = useState(mealDefaults);
   const [summary, setSummary] = useState(null);
   const [message, setMessage] = useState("");
@@ -77,7 +73,6 @@ export default function LogMeal() {
   function handleDateChange(date) {
     const nextDate = normalizeSelectableDate(date);
     setSelectedDate(nextDate);
-    setSearchParams({ date: nextDate });
   }
 
   function updateField(field, value) {
@@ -130,8 +125,8 @@ export default function LogMeal() {
   }
 
   return (
-    <div className="mx-auto grid w-full max-w-6xl gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
-      <section className="rounded-lg border bg-card p-4 sm:p-5">
+    <div className="mx-auto grid w-full max-w-6xl items-start gap-6 xl:grid-cols-[minmax(0,1fr)_360px]">
+      <section className="self-start rounded-lg border bg-card p-4 sm:p-5">
         <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <div className="flex items-center gap-3">
