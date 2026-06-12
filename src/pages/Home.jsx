@@ -1,10 +1,22 @@
 import { createElement, useEffect, useMemo, useState } from "react";
-import { Activity, Flame, Goal, Plus, Settings, Utensils } from "lucide-react";
+import {
+  Activity,
+  Beef,
+  Droplets,
+  Flame,
+  Goal,
+  Leaf,
+  Plus,
+  Settings,
+  Utensils,
+  Wheat,
+} from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import DateSelector from "@/components/forms/DateSelector";
 import { apiRequest } from "@/lib/api";
-import { clampPercent, formatNumber, todayIso } from "@/lib/format";
+import { clampPercent, formatDateLabel, formatNumber, todayIso } from "@/lib/format";
 import { useAuth } from "@/hooks/AuthContext";
 import { useBreadCrumb } from "@/hooks/BreadCrumbContext";
 
@@ -53,6 +65,20 @@ function StatCard({
   );
 }
 
+function dayLogTitle(date) {
+  const label = formatDateLabel(date);
+
+  if (label === "Today") {
+    return "Today's log";
+  }
+
+  if (label === "Yesterday") {
+    return "Yesterday's log";
+  }
+
+  return `${label} log`;
+}
+
 function HomeSkeleton() {
   return (
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
@@ -96,11 +122,11 @@ function HomeSkeleton() {
 export default function Home() {
   const { token, user } = useAuth();
   const { setBreadCrumbTitle } = useBreadCrumb();
+  const [selectedDate, setSelectedDate] = useState(todayIso);
   const [profile, setProfile] = useState(null);
   const [summary, setSummary] = useState(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
-  const date = todayIso();
 
   useEffect(() => {
     setBreadCrumbTitle("Overview");
@@ -113,7 +139,7 @@ export default function Home() {
       try {
         const [profileResponse, summaryResponse] = await Promise.all([
           apiRequest("/api/profile", { token }),
-          apiRequest(`/api/meals?date=${date}`, { token }),
+          apiRequest(`/api/summary?date=${selectedDate}`, { token }),
         ]);
         setProfile(profileResponse);
         setSummary(summaryResponse);
@@ -125,7 +151,7 @@ export default function Home() {
     }
 
     loadDashboard();
-  }, [date, token]);
+  }, [selectedDate, token]);
 
   const remainingCalories = useMemo(() => {
     if (!summary?.calorieTarget) {
@@ -155,19 +181,11 @@ export default function Home() {
     <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
       <section className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">Today</p>
           <h1 className="text-3xl font-semibold tracking-normal">
             Welcome back, {user?.firstName}
           </h1>
         </div>
-        {profile && (
-          <Button asChild>
-            <Link to="/log-meal">
-              <Plus className="size-4" />
-              Add meal
-            </Link>
-          </Button>
-        )}
+        <DateSelector value={selectedDate} onChange={setSelectedDate} />
       </section>
 
       {error && (
@@ -239,20 +257,39 @@ export default function Home() {
               value={`${formatNumber(summary?.calorieTarget)} kcal`}
               detail={`${formatNumber(summary?.meals?.length)} meals logged`}
             />
+            <StatCard
+              icon={Beef}
+              label="Protein"
+              value={`${formatNumber(summary?.protein)}g`}
+              detail={`${formatDateLabel(selectedDate)} total`}
+            />
+            <StatCard
+              icon={Wheat}
+              label="Carbs"
+              value={`${formatNumber(summary?.carbs)}g`}
+              detail={`${formatDateLabel(selectedDate)} total`}
+            />
+            <StatCard
+              icon={Droplets}
+              label="Fats"
+              value={`${formatNumber(summary?.fat)}g`}
+              detail={`${formatDateLabel(selectedDate)} total`}
+            />
+            <StatCard
+              icon={Leaf}
+              label="Fiber"
+              value={`${formatNumber(summary?.fiber)}g`}
+              detail={`${formatDateLabel(selectedDate)} total`}
+            />
           </section>
 
           <section className="rounded-lg border bg-card p-4">
             <div className="mb-4 flex items-center justify-between gap-3">
               <div>
-                <h2 className="text-xl font-semibold">Today's log</h2>
+                <h2 className="text-xl font-semibold">{dayLogTitle(selectedDate)}</h2>
                 <p className="text-sm text-muted-foreground">
-                  Meals saved for {date}
+                  Meals saved for {formatDateLabel(selectedDate)}
                 </p>
-              </div>
-              <div className="hidden text-sm text-muted-foreground sm:block">
-                {formatNumber(summary?.protein)}g protein /{" "}
-                {formatNumber(summary?.carbs)}g carbs /{" "}
-                {formatNumber(summary?.fat)}g fat
               </div>
             </div>
 
@@ -273,8 +310,7 @@ export default function Home() {
                     <div>
                       <p className="font-medium">{meal.name}</p>
                       <p className="text-sm text-muted-foreground capitalize">
-                        {meal.mealType} / {meal.protein}g protein / {meal.carbs}
-                        g carbs / {meal.fat}g fat
+                        {meal.mealType}
                       </p>
                     </div>
                     <p className="font-semibold">
@@ -291,6 +327,14 @@ export default function Home() {
                 </p>
               </div>
             )}
+            <div className="mt-4 flex justify-stretch sm:justify-end">
+              <Button className="w-full sm:w-auto" asChild>
+                <Link to={`/log-meal?date=${selectedDate}`}>
+                  <Plus className="size-4" />
+                  Add meal
+                </Link>
+              </Button>
+            </div>
           </section>
         </>
       )}
