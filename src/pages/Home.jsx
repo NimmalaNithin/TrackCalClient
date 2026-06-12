@@ -329,7 +329,7 @@ export default function Home() {
             )}
             <div className="mt-4 flex justify-stretch sm:justify-end">
               <Button className="w-full sm:w-auto" asChild>
-                <Link to={`/log-meal?date=${selectedDate}`}>
+                <Link to="/log-meal">
                   <Plus className="size-4" />
                   Add meal
                 </Link>
